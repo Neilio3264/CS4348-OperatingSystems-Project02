@@ -7,6 +7,7 @@ sem_t mutex;
 
 void *thread(void *arg)
 {
+    printf("\nCreated..\n");
     // wait
     sem_wait(&mutex);
     printf("\nEntered..\n");
