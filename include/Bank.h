@@ -1,91 +1,47 @@
 #include <pthread.h>
 #include <semaphore.h>
+#include <queue>
+#include <stdlib.h>
+#include <unistd.h>
+#include <thread>
+#include <chrono>
+#include <iostream>
+#include <random>
+
+#include "Log/logger.h"
+
+struct Communication
+{
+    int tellerID = -1;
+    int customerID = -1;
+    int transaction = -1;
+    bool complete = false;
+};
 
 class Bank
 {
 private:
     static const int MAX_TELLER = 3;
-    static const int MAX_CUSTOMER = 100;
+    static const int MAX_CUSTOMER = 6;
+    bool complete;
 
-    sem_t TellerService, ChooseTeller, AskManager, EnterVault;
+    bool tell1_ready, tell2_ready, tell3_ready;
+    sem_t tell1, tell2, tell3;
+    Communication coms1, coms2, coms3;
+
+    sem_t Tellers, Manager, Vault;
+    std::queue<int> line;
+
+    void *customer(void *tid);
+
+    void teller(sem_t &tell, int &id, Communication &shared);
+    void *teller1(void *arg);
+    void *teller2(void *arg);
+    void *teller3(void *arg);
 
 public:
-    Bank(/* args */);
+    Bank();
     ~Bank();
 
-    class Teller
-    {
-    private:
-        bool is_ready;
-        int has_customer = -1;
-
-        /**
-         * @brief Transition is state for which action a customer has prompted
-         *
-         * @param State0 null or no action received
-         * @param State1 Withdraw
-         * @param State2 Deposit
-         */
-        int transition;
-
-    public:
-        Teller(/* args */);
-        ~Teller();
-
-        bool isReady();
-        bool hasCustomer();
-
-        int getState();
-
-        void updateCustomer(int id);
-        void updateState(int state);
-    };
+    void run();
 };
-
-Bank::Bank(/* args */)
-{
-}
-
-Bank::~Bank()
-{
-}
-
-Bank::Teller::Teller(/* args */)
-{
-    is_ready = false;
-    has_customer = false;
-    transition = 0;
-}
-
-Bank::Teller::~Teller()
-{
-}
-
-bool Bank::Teller::isReady()
-{
-    return is_ready;
-}
-
-bool Bank::Teller::hasCustomer()
-{
-    if (has_customer < 0)
-        return false;
-
-    return true;
-}
-
-int Bank::Teller::getState()
-{
-    return transition;
-}
-
-void Bank::Teller::updateCustomer(int id)
-{
-    has_customer = id;
-}
-
-void Bank::Teller::updateState(int state)
-{
-    if (state < 3 && state > -1)
-        transition = state;
-}
