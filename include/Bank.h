@@ -21,9 +21,8 @@ struct Communication
 class Bank
 {
 private:
-    static const int MAX_TELLER = 3;
-    static const int MAX_CUSTOMER = 6;
     bool complete;
+    int served;
 
     bool tell1_ready, tell2_ready, tell3_ready;
     sem_t tell1, tell2, tell3;
@@ -32,16 +31,20 @@ private:
     sem_t Tellers, Manager, Vault;
     std::queue<int> line;
 
-    void *customer(void *tid);
-
     void teller(sem_t &tell, int &id, Communication &shared);
-    void *teller1(void *arg);
-    void *teller2(void *arg);
-    void *teller3(void *arg);
 
 public:
     Bank();
     ~Bank();
 
+    void *customer(void *tid);
+
+    void *teller1(void *arg);
+    void *teller2(void *arg);
+    void *teller3(void *arg);
+
     void run();
+
+    static const int MAX_TELLER = 3;
+    static const int MAX_CUSTOMER = 6;
 };

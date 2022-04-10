@@ -9,6 +9,7 @@ Bank::Bank()
     tell3_ready = false;
 
     complete = false;
+    served = 0;
 
     sem_init(&Tellers, 0, 3);
     sem_init(&Manager, 0, 1);
@@ -61,6 +62,7 @@ void *Bank::customer(void *arg)
     {
         continue;
     }
+    served++;
 
     // Customer chooses a teller and communicates with them
     // ==================================================
@@ -201,6 +203,9 @@ void Bank::teller(sem_t &tell, int &id, Communication &shared)
         {
             continue;
         }
+
+        if (served == MAX_CUSTOMER)
+            complete = true;
     }
 }
 
@@ -209,7 +214,7 @@ void *Bank::teller1(void *arg)
     int id = 0;
 
     coms1.tellerID = id;
-    teller(tell1, id, coms1);
+    // teller(tell1, id, coms1);
 
     return NULL;
 }
@@ -219,7 +224,7 @@ void *Bank::teller2(void *arg)
     int id = 1;
 
     coms2.tellerID = id;
-    teller(tell1, id, coms2);
+    // teller(tell1, id, coms2);
 
     return NULL;
 }
@@ -229,27 +234,7 @@ void *Bank::teller3(void *arg)
     int id = 2;
 
     coms3.tellerID = id;
-    teller(tell3, id, coms3);
-
-    return NULL;
-}
-
-sem_t mutex;
-
-void *thread(void *arg)
-{
-    zotikos::logger::log() << "Created Thread .. " << std::this_thread::get_id();
-
-    // wait
-    sem_wait(&mutex);
-    zotikos::logger::log() << "Entered Thread .. " << std::this_thread::get_id();
-
-    // critical section
-    sleep(4);
-
-    // signal
-    zotikos::logger::log() << "Exiting Thread .. " << std::this_thread::get_id();
-    sem_post(&mutex);
+    // teller(tell3, id, coms3);
 
     return NULL;
 }
@@ -259,12 +244,11 @@ void *thread(void *arg)
 // Also shared is a manager semaphore and safe semaphore
 void Bank::run()
 {
-    sem_init(&mutex, 0, 1);
     pthread_t t_threads[MAX_TELLER];
     pthread_t c_threads[MAX_CUSTOMER];
 
     int rc;
-    rc = pthread_create(&t_threads[0], NULL, thread, NULL);
+    rc = pthread_create(&t_threads[0], NULL, (THREADFUNPTR)&Bank::teller1, NULL);
 
     if (rc)
     {
@@ -272,7 +256,7 @@ void Bank::run()
         return;
     }
 
-    rc = pthread_create(&t_threads[1], NULL, thread, NULL);
+    rc = pthread_create(&t_threads[1], NULL, (THREADFUNPTR)&Bank::teller2, NULL);
 
     if (rc)
     {
@@ -280,7 +264,7 @@ void Bank::run()
         return;
     }
 
-    rc = pthread_create(&t_threads[2], NULL, thread, NULL);
+    rc = pthread_create(&t_threads[2], NULL, (THREADFUNPTR)&Bank::teller3, NULL);
 
     if (rc)
     {
@@ -292,7 +276,7 @@ void Bank::run()
     {
         int *tmp = new int;
         *tmp = i;
-        rc = pthread_create(&c_threads[i], NULL, thread, static_cast<void *>(tmp));
+        rc = pthread_create(&c_threads[i], NULL, (THREADFUNPTR)&Bank::customer, static_cast<void *>(tmp));
 
         if (rc)
         {
