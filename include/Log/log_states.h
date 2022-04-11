@@ -6,11 +6,7 @@ namespace zotikos
     enum class log_state
     {
         BEGIN,
-        PASS_SET,
-        ENCRYPT,
-        DECRYPT,
         QUIT,
-        RESULT,
         ERROR
     };
 }

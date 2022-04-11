@@ -18,27 +18,11 @@ namespace zotikos
         switch (_state)
         {
         case log_state::BEGIN:
-            action = "[START] ";
-            break;
-
-        case log_state::PASS_SET:
-            action = "[PASSKEY] ";
-            break;
-
-        case log_state::ENCRYPT:
-            action = "[ENCRYPT] ";
-            break;
-
-        case log_state::DECRYPT:
-            action = "[DECRYPT] ";
+            action = "[INFO] ";
             break;
 
         case log_state::QUIT:
             action = "[STOP] ";
-            break;
-
-        case log_state::RESULT:
-            action = "[RESULT] ";
             break;
 
         case log_state::ERROR:

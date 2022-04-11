@@ -7,10 +7,9 @@
 #include <chrono>
 #include <iostream>
 #include <random>
+#include <time.h>
 
 #include "../include/Log/logger.h"
-
-// typedef void *(*THREADFUNCPTR)(void *);
 
 // Section to initialize global calls and shared resources
 // ==================================================
@@ -23,7 +22,7 @@ struct Communication
 };
 
 static const int MAX_TELLER = 3;
-static const int MAX_CUSTOMER = 2;
+static const int MAX_CUSTOMER = 100;
 
 bool complete;
 int served;
@@ -33,7 +32,6 @@ sem_t tell1, tell2, tell3;
 Communication coms1, coms2, coms3;
 
 sem_t Tellers, Manager, Vault;
-std::queue<int> line;
 
 void *customer(void *tid);
 
@@ -62,6 +60,8 @@ int main()
     sem_init(&tell1, 0, 1);
     sem_init(&tell2, 0, 1);
     sem_init(&tell3, 0, 1);
+
+    srand(time(NULL));
     // ==================================================
 
     run();
@@ -106,16 +106,16 @@ void *customer(void *arg)
 
     // Customer gets in line at the bank
     // ==================================================
-    line.push(id);
-    served++;
+    // line.push(id);
+
     zotikos::logger::log() << "Customer " << id << " is getting in line.";
     // ==================================================
 
-    while (line.front() != id)
-    {
-        continue;
-    }
-    line.pop();
+    // while (line.front() != id)
+    // {
+    //     continue;
+    // }
+    // line.pop();
 
     // Customer chooses a teller and communicates with them
     // ==================================================
@@ -145,7 +145,7 @@ void *customer(void *arg)
     temp->customerID = id;
     sem_post(talk);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
     sem_wait(talk);
     if (transaction == 0)
@@ -157,7 +157,7 @@ void *customer(void *arg)
     sem_post(talk);
     // ==================================================
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
     // Customer leaves the bank
     // ==================================================
@@ -170,6 +170,7 @@ void *customer(void *arg)
 
     temp = NULL;
     delete temp;
+    talk = NULL;
     sem_destroy(talk);
     return NULL;
 }
@@ -250,7 +251,7 @@ void teller(sem_t &tell, int &id, Communication &shared)
         std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
 
         zotikos::logger::log() << "Teller " << id << " is leaving the safe.";
-        sem_wait(&Vault);
+        sem_post(&Vault);
 
         if (shared.transaction == 0)
         {
@@ -266,6 +267,8 @@ void teller(sem_t &tell, int &id, Communication &shared)
         {
             continue;
         }
+
+        served++;
 
         if (served == MAX_CUSTOMER)
             complete = true;
@@ -339,7 +342,7 @@ void run()
         return;
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     for (int i = 0; i < MAX_CUSTOMER; i++)
     {

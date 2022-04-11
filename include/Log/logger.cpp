@@ -26,6 +26,9 @@ namespace zotikos
 
     void logger::print(logger *instance, std::chrono::duration<double, std::milli> interval)
     {
+        std::ofstream file;
+        file.open(instance->_fileName, std::ios_base::trunc);
+
         while (instance->_print || !instance->_queue.empty())
         {
             auto t1 = std::chrono::steady_clock::now();
@@ -33,17 +36,22 @@ namespace zotikos
                 std::lock_guard<std::mutex> lock(instance->_queue_mutex);
                 while (!instance->_queue.empty())
                 {
-                    std::cout << instance->_queue.front() << std::endl;
+                    if (file.is_open())
+                    {
+                        file << instance->_queue.front() << std::endl;
+                    }
                     instance->_queue.pop();
                 }
             }
+
             auto t2 = std::chrono::steady_clock::now();
-            std::chrono::duration<double, std::milli> time_took = t2 - t1;
-            // sleep
-            if (time_took < interval && instance->_print)
+            std::chrono::duration<double, std::milli> timelapse = t2 - t1;
+            if (timelapse < interval && instance->_print)
             {
-                std::this_thread::sleep_for(interval - time_took);
+                std::this_thread::sleep_for(interval - timelapse);
             }
         }
+
+        file.close();
     }
 }

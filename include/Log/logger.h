@@ -24,6 +24,13 @@ namespace zotikos
         bool _print = true;
         static void print(logger *instance, std::chrono::duration<double, std::milli> interval);
 
+        std::string _fileName;
+
+        void setFile(std::string fileName)
+        {
+            _fileName = fileName;
+        }
+
         logger();
         ~logger();
 
@@ -34,6 +41,7 @@ namespace zotikos
         static logStream log(log_state state = log_state::BEGIN)
         {
             static logger _instance;
+            _instance.setFile("../Log/run.log");
             return logStream(_instance, state);
         }
 
